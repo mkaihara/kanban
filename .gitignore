@@ -1,0 +1,15 @@
+# Next.js and React
+node_modules
+.next
+out
+.build/
+npm-debug.log*
+yarn-error.log*
+.pnp.*.cache
+package-lock.json
+*.tsbuildinfo
+
+# OS
+.DS_Store
+*.swp
+*~
