@@ -1,27 +1,32 @@
-# Launch Board
+# Kanban
 
-A single-board kanban MVP built with Next.js (App Router), Tailwind CSS and dnd-kit.
-One board with five fixed, renameable columns; cards have a title and details and can be
+A kanban app built with Next.js (App Router), Tailwind CSS and dnd-kit. Boards live in
+Excel-style tabs at the bottom: `+` adds one, double-click renames, drag reorders, the x
+deletes. Each board has five renameable columns; cards have a title and details and can be
 dragged between and within columns (mouse or keyboard), added, and deleted.
 
-## Persistence
+## Data
 
-The board is saved server-side to `data/board.json` (gitignored) via `GET/PUT /api/board`.
-Delete that file (or `PUT` the dummy data) to reset the board.
+All boards are saved to one JSON file via `GET/PUT /api/workspace`. The file is
+`$KANBAN_DATA_FILE`, or `data/kanban.json` if unset. On first run at a new location, an
+old `data/board.json` is imported as the first tab.
 
-## Run
+## Start at login
 
 ```bash
-cd frontend
-npm install
-npm run dev
+../scripts/install-autostart.sh [data-file]   # default: iCloud Drive/Kanban/kanban.json
+../scripts/uninstall-autostart.sh
 ```
 
-Open http://localhost:3000.
+The installer builds the app, runs it at http://localhost:3210 at every login and opens it
+in the browser. Rerun it after pulling changes. Logs: `~/Library/Logs/kanban/`. To move the
+data, copy the file to the new place and rerun the installer with that path.
 
-## Tests
+## Develop and test
 
 ```bash
+npm install
+npm run dev       # http://localhost:3000 (this machine only), data in data/kanban.json
 npm test          # unit and component tests (Vitest)
-npm run test:e2e  # end-to-end tests (Playwright; reuses the dev server on :3000)
+npm run test:e2e  # end-to-end tests (Playwright; own server on :3100 and a temp data file)
 ```

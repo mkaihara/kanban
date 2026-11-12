@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -32,101 +32,52 @@ const collisionDetection: CollisionDetection = (args) => {
   return collisions.length > 0 ? collisions : rectIntersection(args);
 };
 
-export default function Board() {
-  const [board, setBoard] = useState<BoardData | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
+interface BoardProps {
+  board: BoardData;
+  onChange: (update: (current: BoardData) => BoardData) => void;
+}
+
+export default function Board({ board, onChange }: BoardProps) {
+  // While a card is dragged, moves happen on this local copy; the drop commits it.
+  const [dragBoard, setDragBoard] = useState<BoardData | null>(null);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
-  const dragSnapshot = useRef<BoardData | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  useEffect(() => {
-    let active = true;
-    fetch("/api/board")
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json() as Promise<BoardData>;
-      })
-      .then((data) => {
-        if (active) setBoard(data);
-      })
-      .catch(() => {
-        if (active) setLoadFailed(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Persist the board whenever it changes. Skipped mid-drag (the drop lands here).
-  useEffect(() => {
-    if (!board || activeCardId) return;
-    void fetch("/api/board", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(board),
-    });
-  }, [board, activeCardId]);
+  const shown = dragBoard ?? board;
 
   const activeCard = activeCardId
-    ? (findColumnByCardId(board ?? [], activeCardId)?.cards.find(
-        (card) => card.id === activeCardId,
-      ) ?? null)
+    ? (findColumnByCardId(shown, activeCardId)?.cards.find((card) => card.id === activeCardId) ??
+      null)
     : null;
 
-  function mutate(updater: (current: BoardData) => BoardData) {
-    setBoard((current) => (current ? updater(current) : current));
-  }
-
   function handleDragStart(event: DragStartEvent) {
-    dragSnapshot.current = board;
+    setDragBoard(board);
     setActiveCardId(String(event.active.id));
   }
 
   function handleDragOver({ active, over }: DragOverEvent) {
     const activeId = String(active.id);
     if (!over || activeId === String(over.id)) return;
-    mutate((current) => {
+    setDragBoard((current) => {
+      if (!current) return current;
       const target = dropTarget(current, over.id);
       return target ? moveCard(current, activeId, target.columnId, target.index) : current;
     });
   }
 
   function handleDragEnd() {
+    const dropped = dragBoard;
+    if (dropped && dropped !== board) onChange(() => dropped);
+    setDragBoard(null);
     setActiveCardId(null);
   }
 
   function handleDragCancel() {
-    // A cancelled drag puts the card back where it started.
-    setBoard((current) => dragSnapshot.current ?? current);
+    // A cancelled drag leaves the board where it started.
+    setDragBoard(null);
     setActiveCardId(null);
-  }
-
-  if (loadFailed) {
-    return (
-      <p className="py-16 text-center text-sm text-muted">
-        Could not load the board. Please check the server and reload.
-      </p>
-    );
-  }
-
-  if (!board) {
-    return (
-      <div className="flex min-h-0 flex-1 items-stretch gap-4 overflow-x-auto pb-4" aria-busy>
-        {Array.from({ length: 5 }, (_, index) => (
-          <div
-            key={index}
-            className="w-[300px] min-w-[300px] animate-pulse rounded-2xl border border-slate-200/70 bg-white/60 p-3"
-          >
-            <div className="mb-3 h-4 w-24 rounded bg-slate-200" />
-            <div className="mb-2 h-16 rounded-xl bg-slate-200/70" />
-            <div className="mb-2 h-16 rounded-xl bg-slate-200/70" />
-          </div>
-        ))}
-      </div>
-    );
   }
 
   return (
@@ -140,15 +91,15 @@ export default function Board() {
       onDragCancel={handleDragCancel}
     >
       <div className="flex min-h-0 flex-1 items-stretch gap-4 overflow-x-auto pb-4">
-        {board.map((column) => (
+        {shown.map((column) => (
           <ColumnView
             key={column.id}
             column={column}
-            onRename={(title) => mutate((current) => renameColumn(current, column.id, title))}
+            onRename={(title) => onChange((current) => renameColumn(current, column.id, title))}
             onAddCard={(title, details) =>
-              mutate((current) => addCard(current, column.id, title, details))
+              onChange((current) => addCard(current, column.id, title, details))
             }
-            onDeleteCard={(cardId) => mutate((current) => deleteCard(current, cardId))}
+            onDeleteCard={(cardId) => onChange((current) => deleteCard(current, cardId))}
           />
         ))}
       </div>
