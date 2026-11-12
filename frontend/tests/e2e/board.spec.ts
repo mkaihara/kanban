@@ -157,12 +157,14 @@ test("moves a card to another column with the keyboard", async ({ page }) => {
   const card = page.getByTestId("card-1");
   await card.focus();
   await page.keyboard.press("Space"); // lift the card
-  for (let i = 0; i < 6; i += 1) {
+  // Arrow keys step between drop targets; press one at a time until column 2 is reached.
+  const target = column(page, "2");
+  await expect(async () => {
     await page.keyboard.press("ArrowRight");
-  }
+    await expect(target.getByTestId("card-1")).toBeAttached({ timeout: 300 });
+  }).toPass();
   await page.keyboard.press("Space"); // drop
 
-  const target = column(page, "2");
   await expect(target).toContainText("Audit accessibility across the app");
   await expect(column(page, "1")).not.toContainText("Audit accessibility across the app");
   await expect(page.getByTestId("column-1-count")).toHaveText("3");
