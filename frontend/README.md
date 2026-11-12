@@ -26,7 +26,7 @@ data, copy the file to the new place and rerun the installer with that path.
 
 ```bash
 npm install
-npm run dev       # http://localhost:3000, data in data/kanban.json
+npm run dev       # http://localhost:3000 (this machine only), data in data/kanban.json
 npm test          # unit and component tests (Vitest)
 npm run test:e2e  # end-to-end tests (Playwright; own server on :3100 and a temp data file)
 ```
