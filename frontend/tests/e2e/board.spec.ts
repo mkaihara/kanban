@@ -230,3 +230,40 @@ test("persists renamed columns and added cards across page reloads", async ({
   await expect(target.getByText("Capacity for 120 guests.")).toBeVisible();
   await expect(page.getByTestId("column-2-count")).toHaveText("4");
 });
+test("drags the bottom card of a long, scrolling column to the top", async ({ page, request }) => {
+  const cards = Array.from({ length: 15 }, (_, index) => ({
+    id: `long-${index + 1}`,
+    title: `Long card ${index + 1}`,
+    details: "Enough cards to make the column scroll.",
+  }));
+  const workspace = structuredClone(initialWorkspace);
+  workspace.sheets[0].columns[0].cards = cards;
+  expect((await request.put("/api/workspace", { data: workspace })).ok()).toBe(true);
+
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  const backlog = column(page, "1");
+  const last = page.getByTestId("card-long-15");
+  await last.scrollIntoViewIfNeeded();
+  const box = (await last.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  // Drag up to the top of the card list and hold there while it auto-scrolls.
+  const top = (await backlog.boundingBox())!.y + 75;
+  for (let y = box.y + box.height / 2; y > top; y -= 15) {
+    await page.mouse.move(box.x + box.width / 2, y, { steps: 2 });
+  }
+  for (let i = 0; i < 20; i += 1) {
+    await page.mouse.move(box.x + box.width / 2, top + (i % 2), { steps: 1 });
+    await page.waitForTimeout(100);
+  }
+  await page.mouse.up();
+
+  await expect.poll(async () => (await cardOrder(backlog))[0]).toBe("card-long-15");
+  expect(await cardOrder(backlog)).toHaveLength(15);
+  expect(errors).toEqual([]);
+  await expect
+    .poll(async () => (await (await request.get("/api/workspace")).json()).sheets[0].columns[0].cards[0].id)
+    .toBe("long-15");
+});
