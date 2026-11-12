@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { initialBoard } from "../../src/lib/board";
+import { initialWorkspace } from "../../src/lib/workspace";
 
 function column(page: Page, id: string): Locator {
   return page.getByTestId(`column-${id}`);
@@ -7,7 +7,7 @@ function column(page: Page, id: string): Locator {
 
 // Every test starts from the same clean dummy board on the server.
 test.beforeEach(async ({ request }) => {
-  const response = await request.put("/api/board", { data: initialBoard });
+  const response = await request.put("/api/workspace", { data: initialWorkspace });
   expect(response.ok()).toBe(true);
 });
 
@@ -177,8 +177,8 @@ test("persists card positions across page reloads", async ({ page, request }) =>
   // Wait until the save has landed on the server before reloading.
   await expect
     .poll(async () => {
-      const saved = await (await request.get("/api/board")).json();
-      return saved[2].cards.length;
+      const saved = await (await request.get("/api/workspace")).json();
+      return saved.sheets[0].columns[2].cards.length;
     })
     .toBe(4);
 
@@ -213,10 +213,10 @@ test("persists renamed columns and added cards across page reloads", async ({
   // Wait until both changes have landed on the server before reloading.
   await expect
     .poll(async () => {
-      const saved = await (await request.get("/api/board")).json();
+      const { columns } = (await (await request.get("/api/workspace")).json()).sheets[0];
       return {
-        column2Cards: saved[1].cards.length,
-        column4Title: saved[3].title,
+        column2Cards: columns[1].cards.length,
+        column4Title: columns[3].title,
       };
     })
     .toEqual({ column2Cards: 4, column4Title: "QA" });

@@ -1,7 +1,7 @@
 # Kanban Project Manager
 
-A single-board kanban MVP built with Next.js (App Router), Tailwind CSS and dnd-kit.
-One board with five fixed, renameable columns; cards have a title and details and can
-be dragged between and within columns, added, and deleted.
+A kanban app built with Next.js (App Router), Tailwind CSS and dnd-kit. Multiple boards
+in Excel-style tabs, five renameable columns per board, cards with a title and details,
+drag and drop. Data is one JSON file (iCloud Drive by default), and the app can start at login.
 
-See `frontend/README.md` for how to run and test the app.
+See `frontend/README.md` for how to run, install and test it.
