@@ -60,6 +60,24 @@ export default function Workspace() {
     );
   }, [workspace]);
 
+  // Other programs (such as an AI agent) may edit the data file. Reload it when the
+  // window regains focus, after pending saves, unless the board changed meanwhile.
+  useEffect(() => {
+    function reload() {
+      saving.current = saving.current.then(async () => {
+        const before = saved.current;
+        const response = await fetch("/api/workspace").catch(() => null);
+        if (!response?.ok) return;
+        const data = (await response.json()) as WorkspaceData;
+        if (saved.current !== before) return;
+        saved.current = data;
+        setWorkspace(data);
+      });
+    }
+    window.addEventListener("focus", reload);
+    return () => window.removeEventListener("focus", reload);
+  }, []);
+
   function select(id: string) {
     setActiveId(id);
     localStorage.setItem(ACTIVE_SHEET_KEY, id);

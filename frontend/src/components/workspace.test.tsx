@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Workspace from "@/components/Workspace";
@@ -250,5 +250,23 @@ describe("Workspace tabs", () => {
   it("cannot delete the only board", async () => {
     await renderBoard();
     expect(screen.queryByRole("button", { name: /Delete board/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("Workspace reload", () => {
+  it("reloads the workspace when the window regains focus, without saving it back", async () => {
+    const fetchMock = await renderBoard(twoSheets);
+    const edited = structuredClone(twoSheets);
+    edited.sheets[0].name = "Edited elsewhere";
+    fetchMock.mockImplementation(async () =>
+      Promise.resolve(new Response(JSON.stringify(edited), { headers: { "Content-Type": "application/json" } })),
+    );
+
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+
+    expect(await screen.findByRole("heading", { name: "Edited elsewhere" })).toBeInTheDocument();
+    expect(savedWorkspaces(fetchMock)).toEqual([]);
   });
 });

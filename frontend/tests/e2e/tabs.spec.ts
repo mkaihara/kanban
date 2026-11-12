@@ -1,4 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { initialWorkspace } from "../../src/lib/workspace";
 
 test.beforeEach(async ({ request }) => {
@@ -100,4 +103,32 @@ test("boards, names and the active tab survive a reload", async ({ page, request
   await expect(page.getByRole("heading", { name: "Personal" })).toBeVisible();
   await expect(page.getByRole("tab")).toHaveText(["Launch Board", "Personal"]);
   await expect(tab(page, "Personal")).toHaveAttribute("aria-selected", "true");
+});
+
+test("shows edits made to the data file by another program when the window regains focus", async ({
+  page,
+}) => {
+  await loadBoard(page);
+  await expect(page.getByText("Added by an agent")).toHaveCount(0);
+
+  // Another program (for example an AI agent) edits the file directly.
+  const file = path.join(tmpdir(), "kanban-e2e", "kanban.json");
+  const data = JSON.parse(await readFile(file, "utf8"));
+  data.sheets[0].columns[0].cards.unshift({ id: "agent-1", title: "Added by an agent", details: "" });
+  await writeFile(file, JSON.stringify(data));
+
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByTestId("card-agent-1")).toContainText("Added by an agent");
+
+  // A change made in the browser afterwards keeps the agent's card.
+  await page.getByRole("button", { name: "Delete card: Design empty states", exact: true }).click();
+  await expect
+    .poll(async () => {
+      const saved = JSON.parse(await readFile(file, "utf8"));
+      const ids = saved.sheets[0].columns.flatMap((column: { cards: { id: string }[] }) =>
+        column.cards.map((card) => card.id),
+      );
+      return { agentCard: ids.includes("agent-1"), deletedCard: ids.includes("5") };
+    })
+    .toEqual({ agentCard: true, deletedCard: false });
 });
