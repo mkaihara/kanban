@@ -11,6 +11,7 @@ import {
   useSensor,
   useSensors,
   type CollisionDetection,
+  type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -57,18 +58,24 @@ export default function Board({ board, onChange }: BoardProps) {
     setActiveCardId(String(event.active.id));
   }
 
+  // Moves between columns happen while dragging; within a column the sortable
+  // animation shows the new spot and the reorder is applied on drop. Reordering
+  // in state mid-drag makes `over` flip-flop in long columns (infinite updates).
   function handleDragOver({ active, over }: DragOverEvent) {
     const activeId = String(active.id);
     if (!over || activeId === String(over.id)) return;
     setDragBoard((current) => {
       if (!current) return current;
       const target = dropTarget(current, over.id);
-      return target ? moveCard(current, activeId, target.columnId, target.index) : current;
+      if (!target || target.columnId === findColumnByCardId(current, activeId)?.id) return current;
+      return moveCard(current, activeId, target.columnId, target.index);
     });
   }
 
-  function handleDragEnd() {
-    const dropped = dragBoard;
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    let dropped = dragBoard;
+    const target = dropped && over ? dropTarget(dropped, over.id) : null;
+    if (dropped && target) dropped = moveCard(dropped, String(active.id), target.columnId, target.index);
     if (dropped && dropped !== board) onChange(() => dropped);
     setDragBoard(null);
     setActiveCardId(null);
