@@ -53,7 +53,7 @@ test("renders the board with five columns and dummy data", async ({ page }) => {
   for (const [index, title] of titles.entries()) {
     const section = column(page, String(index + 1));
     await expect(section).toBeVisible();
-    await expect(section.getByRole("button", { name: title })).toBeVisible();
+    await expect(section.getByRole("button", { name: title, exact: true })).toBeVisible();
   }
 
   await expect(page.getByRole("heading", { name: "Launch Board" })).toBeVisible();
@@ -68,26 +68,26 @@ test("renders the board with five columns and dummy data", async ({ page }) => {
 test("renames a column inline", async ({ page }) => {
   await loadBoard(page);
 
-  await page.getByRole("button", { name: "In Review" }).click();
+  await page.getByRole("button", { name: "In Review", exact: true }).dblclick();
   const input = page.getByLabel("Column title");
   await expect(input).toHaveValue("In Review");
   await input.fill("QA");
   await input.press("Enter");
 
-  await expect(page.getByRole("button", { name: "QA" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "In Review" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "QA", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "In Review", exact: true })).toHaveCount(0);
 });
 
 test("keeps the old title when renaming is cancelled with Escape", async ({ page }) => {
   await loadBoard(page);
 
-  await page.getByRole("button", { name: "Backlog" }).click();
+  await page.getByRole("button", { name: "Backlog", exact: true }).dblclick();
   const input = page.getByLabel("Column title");
   await input.fill("Ideas");
   await input.press("Escape");
 
-  await expect(page.getByRole("button", { name: "Backlog" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Ideas" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Backlog", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ideas", exact: true })).toHaveCount(0);
 });
 
 test("adds a card with title and details", async ({ page }) => {
@@ -200,7 +200,7 @@ test("persists renamed columns and added cards across page reloads", async ({
 }) => {
   await loadBoard(page);
 
-  await page.getByRole("button", { name: "In Review" }).click();
+  await page.getByRole("button", { name: "In Review", exact: true }).dblclick();
   const titleInput = page.getByLabel("Column title");
   await titleInput.fill("QA");
   await titleInput.press("Enter");
@@ -226,8 +226,8 @@ test("persists renamed columns and added cards across page reloads", async ({
   await page.reload();
   await expect(page.getByTestId("card-1")).toBeVisible();
 
-  await expect(page.getByRole("button", { name: "QA" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "In Review" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "QA", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "In Review", exact: true })).toHaveCount(0);
   await expect(target.getByText("Book the venue")).toBeVisible();
   await expect(target.getByText("Capacity for 120 guests.")).toBeVisible();
   await expect(page.getByTestId("column-2-count")).toHaveText("4");

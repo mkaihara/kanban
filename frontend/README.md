@@ -2,7 +2,9 @@
 
 A kanban app built with Next.js (App Router), Tailwind CSS and dnd-kit. Boards live in
 Excel-style tabs at the bottom: `+` adds one, double-click renames, drag reorders, the x
-deletes. Each board has five renameable columns; cards have a title and details and can be
+deletes. A new board starts with five columns; double-click a column title to rename it,
+drag its header to move it, `+` at the end adds one and the x deletes it (asking first if it
+has cards). Cards have a title and details; double-click one to edit it. Cards can be
 dragged between and within columns (mouse or keyboard), added, and deleted.
 
 ## Data

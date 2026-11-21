@@ -4,10 +4,10 @@
 
 - An MVP of a Kanban style Project Management application as a web app  
 - Multiple boards, shown as Excel-style tabs at the bottom (add, rename, delete, drag to reorder)
-- The board has fixed 5 columns that can be renamed  
+- A new board starts with 5 columns; columns can be added, renamed (double-click), deleted and dragged to reorder
 - Each card has a title and details only
 - Drag and drop interface to move cards between columns
-- Add a new card to a column; delete an existing card
+- Add a new card to a column; edit a card (double-click); delete an existing card
 - No more functionality: no archive, no search/filter. Keep it simple.
 - The priority is a slick, professional, gorgeous UI/UX with very simple features
 - The app should open with dummy data populated on first run

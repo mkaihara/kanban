@@ -95,3 +95,15 @@ No persistence, no user management. Slick, simple UI using the project color sch
 - [x] Verified: server reachable on 3210 under launchd, reading/writing iCloud Drive,
       survives `launchctl kickstart -k`, existing board present as first tab
 - [x] README updated (minimal)
+
+## Phase 10 - Editable columns and cards
+
+- [x] Pure functions: add column ("New column"), delete column (never the last), move
+      column, edit card; unit tests for each
+- [x] Double-click a column title to rename it (single click does nothing)
+- [x] Drag a column by its header to reorder; cards still drop onto any column
+- [x] `+` strip after the last column adds one; the x in the header deletes it, with a
+      confirm dialog when it holds cards
+- [x] Double-click a card to edit title and details (Save, Cancel, Escape, Cmd/Ctrl+Enter)
+- [x] Component and E2E tests: rename by double-click, add/delete/move column, edit and
+      cancel card edits, edits survive reload
