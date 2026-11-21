@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   addCard,
+  addColumn,
   columnDroppableId,
   deleteCard,
+  deleteColumn,
+  editCard,
   dropTarget,
   findColumnByCardId,
   initialBoard,
   moveCard,
+  moveColumn,
   renameColumn,
   type Board,
 } from "./board";
@@ -164,5 +168,47 @@ describe("findColumnByCardId", () => {
   it("finds the column containing the card", () => {
     expect(findColumnByCardId(fixture(), "c")?.id).toBe("col-2");
     expect(findColumnByCardId(fixture(), "nope")).toBeUndefined();
+  });
+});
+describe("editCard", () => {
+  it("changes only the given card's title and details", () => {
+    const board = editCard(fixture(), "b", "B2", "new details");
+    expect(board[0].cards).toEqual([
+      { id: "a", title: "A", details: "a" },
+      { id: "b", title: "B2", details: "new details" },
+    ]);
+    expect(board[1]).toEqual(fixture()[1]);
+  });
+});
+
+describe("addColumn", () => {
+  it("appends an empty column", () => {
+    const board = addColumn(fixture());
+    expect(board).toHaveLength(3);
+    expect(board[2]).toMatchObject({ title: "New column", cards: [] });
+    expect(board[2].id).not.toBe("col-1");
+  });
+});
+
+describe("deleteColumn", () => {
+  it("removes the column with its cards", () => {
+    expect(deleteColumn(fixture(), "col-1").map((column) => column.id)).toEqual(["col-2"]);
+  });
+
+  it("never deletes the last column", () => {
+    const board = deleteColumn(fixture(), "col-1");
+    expect(deleteColumn(board, "col-2")).toBe(board);
+  });
+});
+
+describe("moveColumn", () => {
+  it("moves a column to the position of another", () => {
+    const board = moveColumn(addColumn(fixture()), "col-1", "col-2");
+    expect(board.map((column) => column.title)).toEqual(["To Do", "Backlog", "New column"]);
+  });
+
+  it("ignores unknown ids", () => {
+    const board = fixture();
+    expect(moveColumn(board, "col-1", "nope")).toBe(board);
   });
 });

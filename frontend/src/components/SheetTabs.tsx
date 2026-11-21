@@ -12,6 +12,7 @@ import {
 import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type { Sheet } from "@/lib/workspace";
 
 interface SheetTabsProps {
@@ -78,41 +79,16 @@ export default function SheetTabs({
       </div>
 
       {confirming ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/30 p-6 backdrop-blur-[2px]">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-board-title"
-            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-          >
-            <h2 id="delete-board-title" className="text-lg font-semibold text-navy">
-              Delete &ldquo;{confirming.name}&rdquo;?
-            </h2>
-            <p className="mt-2 text-sm text-muted">
-              The board and all of its cards will be removed. This cannot be undone.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                autoFocus
-                onClick={() => setConfirming(null)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-muted transition hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onDelete(confirming.id);
-                  setConfirming(null);
-                }}
-                className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary/90"
-              >
-                Delete board
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title={`Delete \u201c${confirming.name}\u201d?`}
+          message="The board and all of its cards will be removed. This cannot be undone."
+          confirmLabel="Delete board"
+          onConfirm={() => {
+            onDelete(confirming.id);
+            setConfirming(null);
+          }}
+          onCancel={() => setConfirming(null)}
+        />
       ) : null}
     </>
   );

@@ -66,6 +66,32 @@ export function renameColumn(board: Board, columnId: string, title: string): Boa
   return board.map((column) => (column.id === columnId ? { ...column, title } : column));
 }
 
+export function editCard(board: Board, cardId: string, title: string, details: string): Board {
+  return board.map((column) => ({
+    ...column,
+    cards: column.cards.map((card) => (card.id === cardId ? { ...card, title, details } : card)),
+  }));
+}
+
+export function addColumn(board: Board): Board {
+  return [...board, { id: createId(), title: "New column", cards: [] }];
+}
+
+/** Remove a column and its cards; a board always keeps at least one column. */
+export function deleteColumn(board: Board, columnId: string): Board {
+  if (board.length <= 1) return board;
+  return board.filter((column) => column.id !== columnId);
+}
+
+export function moveColumn(board: Board, columnId: string, overId: string): Board {
+  const from = board.findIndex((column) => column.id === columnId);
+  const to = board.findIndex((column) => column.id === overId);
+  if (from === -1 || to === -1 || from === to) return board;
+  const columns = [...board];
+  columns.splice(to, 0, ...columns.splice(from, 1));
+  return columns;
+}
+
 export function moveCard(board: Board, cardId: string, toColumnId: string, toIndex: number): Board {
   const source = findColumnByCardId(board, cardId);
   if (!source) return board;
@@ -148,7 +174,7 @@ export const initialBoard: Board = [
       {
         id: "9",
         title: "Inline column renaming",
-        details: "Click a title to edit; Enter saves, Escape cancels.",
+        details: "Double-click a title to edit; Enter saves, Escape cancels.",
       },
       {
         id: "10",

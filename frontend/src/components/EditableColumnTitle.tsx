@@ -37,6 +37,7 @@ export default function EditableColumnTitle({ title, onRename }: EditableColumnT
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
+        onPointerDown={(event) => event.stopPropagation()}
         onKeyDown={(event) => {
           if (event.key === "Enter") commit();
           if (event.key === "Escape") cancel();
@@ -49,8 +50,8 @@ export default function EditableColumnTitle({ title, onRename }: EditableColumnT
   return (
     <button
       type="button"
-      onClick={startEditing}
-      title="Rename column"
+      onDoubleClick={startEditing}
+      title="Double-click to rename"
       className="group flex items-center gap-1 rounded-md px-1 py-0.5 text-left transition hover:bg-slate-50"
     >
       <h2 className="text-sm font-semibold text-navy">{title}</h2>

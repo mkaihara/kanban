@@ -4,9 +4,17 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { initialWorkspace } from "../../src/lib/workspace";
 
-test.beforeEach(async ({ request }) => {
+test.beforeEach(async ({ page, request }) => {
   const response = await request.put("/api/workspace", { data: initialWorkspace });
   expect(response.ok()).toBe(true);
+  // The Next.js dev overlay can show a toast over the first tab (bottom left).
+  await page.addInitScript(() =>
+    addEventListener("DOMContentLoaded", () => {
+      const style = document.createElement("style");
+      style.textContent = "nextjs-portal { display: none !important; }";
+      document.head.append(style);
+    }),
+  );
 });
 
 async function loadBoard(page: Page) {

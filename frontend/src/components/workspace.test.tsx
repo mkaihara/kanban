@@ -87,7 +87,7 @@ describe("Workspace board", () => {
   it("renames a column and saves the change", async () => {
     const user = userEvent.setup();
     const fetchMock = await renderBoard();
-    await user.click(screen.getByRole("button", { name: "In Review" }));
+    await user.dblClick(screen.getByRole("button", { name: "In Review" }));
     const input = screen.getByLabelText("Column title");
     await user.clear(input);
     await user.type(input, "QA{Enter}");
@@ -100,7 +100,7 @@ describe("Workspace board", () => {
   it("keeps the old title when renaming is cancelled with Escape", async () => {
     const user = userEvent.setup();
     await renderBoard();
-    await user.click(screen.getByRole("button", { name: "Backlog" }));
+    await user.dblClick(screen.getByRole("button", { name: "Backlog" }));
     const input = screen.getByLabelText("Column title");
     await user.clear(input);
     await user.type(input, "Ideas{Escape}");
@@ -152,6 +152,94 @@ describe("Workspace board", () => {
     expect(screen.getByTestId("column-2-count")).toHaveTextContent("2");
     const saved = savedBoards(fetchMock).at(-1) as SavedBoard;
     expect(saved[1].cards.map((card) => card.id)).not.toContain("card-5");
+  });
+
+  it("does not rename a column on a single click", async () => {
+    const user = userEvent.setup();
+    await renderBoard();
+    await user.click(screen.getByRole("button", { name: "Backlog" }));
+    expect(screen.queryByLabelText("Column title")).not.toBeInTheDocument();
+  });
+
+  it("edits a card by double-clicking it and saves the change", async () => {
+    const user = userEvent.setup();
+    const fetchMock = await renderBoard();
+    await user.dblClick(screen.getByText("Design empty states"));
+    const card = screen.getByTestId("card-5");
+    const title = within(card).getByLabelText("Card title");
+    expect(title).toHaveValue("Design empty states");
+    await user.clear(title);
+    await user.type(title, "Design empty and error states");
+    const details = within(card).getByLabelText("Card details");
+    await user.clear(details);
+    await user.type(details, "Covers 404 too.");
+    await user.click(within(card).getByRole("button", { name: "Save" }));
+
+    expect(card).toHaveTextContent("Design empty and error states");
+    expect(card).toHaveTextContent("Covers 404 too.");
+    const saved = savedBoards(fetchMock).at(-1) as SavedBoard;
+    expect(saved[1].cards[0]).toEqual({
+      id: "5",
+      title: "Design empty and error states",
+      details: "Covers 404 too.",
+    });
+  });
+
+  it("keeps a card unchanged when editing is cancelled with Escape", async () => {
+    const user = userEvent.setup();
+    const fetchMock = await renderBoard();
+    await user.dblClick(screen.getByText("Design empty states"));
+    await user.type(screen.getByLabelText("Card title"), " changed{Escape}");
+
+    expect(screen.queryByLabelText("Card title")).not.toBeInTheDocument();
+    expect(screen.getByTestId("card-5")).toHaveTextContent("Design empty states");
+    expect(savedWorkspaces(fetchMock)).toEqual([]);
+  });
+
+  it("adds an empty column and saves it", async () => {
+    const user = userEvent.setup();
+    const fetchMock = await renderBoard();
+    await user.click(screen.getByRole("button", { name: "Add column" }));
+
+    expect(screen.getByRole("button", { name: "New column" })).toBeInTheDocument();
+    const saved = savedBoards(fetchMock).at(-1) as SavedBoard;
+    expect(saved.map((column) => column.title)).toEqual([...COLUMN_TITLES, "New column"]);
+  });
+
+  it("deletes an empty column without asking", async () => {
+    const user = userEvent.setup();
+    const fetchMock = await renderBoard();
+    await user.click(screen.getByRole("button", { name: "Add column" }));
+    await user.click(screen.getByRole("button", { name: "Delete column: New column" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New column" })).not.toBeInTheDocument();
+    expect((savedBoards(fetchMock).at(-1) as SavedBoard).map((column) => column.title)).toEqual(COLUMN_TITLES);
+  });
+
+  it("deletes a column with cards only after confirmation", async () => {
+    const user = userEvent.setup();
+    const fetchMock = await renderBoard();
+    await user.click(screen.getByRole("button", { name: "Delete column: To Do" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    expect(screen.getByTestId("column-2")).toBeInTheDocument();
+    expect(savedWorkspaces(fetchMock)).toEqual([]);
+
+    await user.click(screen.getByRole("button", { name: "Delete column: To Do" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete column" }));
+    expect(screen.queryByTestId("column-2")).not.toBeInTheDocument();
+    expect((savedBoards(fetchMock).at(-1) as SavedBoard).map((column) => column.title)).toEqual([
+      "Backlog",
+      "In Progress",
+      "In Review",
+      "Done",
+    ]);
+  });
+
+  it("cannot delete the only column", async () => {
+    await renderBoard(twoSheets);
+    await userEvent.setup().click(screen.getByRole("tab", { name: "Ops" }));
+    expect(screen.queryByRole("button", { name: /Delete column/ })).not.toBeInTheDocument();
   });
 });
 describe("Workspace tabs", () => {
